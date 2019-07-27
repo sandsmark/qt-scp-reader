@@ -3,6 +3,8 @@
 #include <QFile>
 #include <QDebug>
 #include <QRegularExpression>
+#include <QTextBlock>
+#include <QTextTable>
 
 WikiDocument::WikiDocument(QObject *parent) :
     QTextDocument(parent)
@@ -23,6 +25,22 @@ bool WikiDocument::load(const QString &path)
     QString content = QString::fromUtf8(file.readAll());
 //    content = preprocess(std::move(content));
 
+
+    QRegularExpression quoteRegex(R"(^>(.*?)^[^>])", QRegularExpression::DotMatchesEverythingOption | QRegularExpression::MultilineOption);
+    qDebug().noquote() << quoteRegex.pattern();
+//    qDebug().noquote() << content;
+//    QRegularExpression quoteRegex(R"(^>(.*)\n)", QRegularExpression::DotMatchesEverythingOption);
+//    qDebug() << collapsableRegex.errorString();
+    QRegularExpressionMatch match = quoteRegex.match(content);
+//    while (match.hasMatch()) {
+//        QString preContent = match.captured(1);
+//        preContent.replace(">", "   ");
+//        preContent = "<pre>" + preContent + "</pre>";
+//        content = content.replace(match.captured(0), preContent);
+
+//        match = quoteRegex.match(content);
+//    }
+
     content = content.remove("[[>]]");
     content = content.remove("[[/>]]");
     content = content.remove("[[=]]");
@@ -31,7 +49,7 @@ bool WikiDocument::load(const QString &path)
 //    content = content.replace("[[div", "<div>");
 
     QRegularExpression titleRegex("title:(.+)");
-    QRegularExpressionMatch match = titleRegex.match(content);
+    match = titleRegex.match(content);
     if (match.hasMatch()) {
         qDebug() << match.captured(0) << match.captured(1);
         content = content.replace(match.captured(0), "<h1>" + match.captured(1) + "</h1>");
@@ -46,7 +64,6 @@ bool WikiDocument::load(const QString &path)
         content.replace(match.captured(0), parseCollapsable(match.captured(0)));
         match = collapsableRegex.match(content);
     }
-    content = content.replace("\n", "<br/>\n");
 
     QRegularExpression divRegex(R"(\[\[div([^\]]*)\]\])");
     match = divRegex.match(content);
@@ -77,32 +94,251 @@ bool WikiDocument::load(const QString &path)
         if (moduleBlacklist.contains(match.captured(1))) {
             content = content.remove(match.captured(0));
         }
-//         = content.replace(match.captured(0), "<b>" + match.captured(1) + "</b>");
         match = moduleRegex.match(content);
     }
+    QRegularExpression includeRegex(R"(\[\[include ([^\]]*)\]\])");
+    match = includeRegex.match(content);
+    while (match.hasMatch()) {
+        content = content.remove(match.captured(0));
+        match = includeRegex.match(content);
+    }
 
-    QRegularExpression linkRegex(R"(\[([^\[]+?) \])");
+    QRegularExpression linkRegex(R"(\[([^\[]+?) ([^\[]+?)\])");
     match = linkRegex.match(content);
     while (match.hasMatch()) {
-        content = content.replace(match.captured(0), "<a href=" + match.captured(1) + "</b>");
-        qDebug() << match.captured();
+        if (QUrl(match.captured(1)).scheme().isEmpty()) {
+            match = linkRegex.match(content, match.capturedEnd());
+            continue;
+        }
+        content = content.replace(match.captured(0), "<a href=" + match.captured(1) + ">" + match.captured(2) + "</a>");
+        qDebug() << "captured" << match.captured() << match.captured(1) << match.captured(2);
         match = linkRegex.match(content);
     }
+
+    content.replace("\n\n", "<br/><br/>");
+
+//    QRegularExpression paragraphRegex(R"(^([^<\[].+)\n\n)", QRegularExpression::MultilineOption);
+//    QRegularExpression paragraphRegex(R"(^[^<](.+)\n\n)", QRegularExpression::MultilineOption);
+//    match = paragraphRegex.match(content);
+//    while (match.hasMatch()) {
+////        content = "<p>" + match.captured() + "</p>";
+//        qDebug() << "paragraph" << match.captured() << match.captured(1);
+//        match = paragraphRegex.match(content, match.capturedEnd());
+//    }
 
 
 //    QRegularExpression crapRegex(R"(\[\[[^\]]*\]\])");
 //    content = content.remove(crapRegex);
-    content = "<body>" + content + "</body>";
+//    content = "<body>" + content + "</body>";
 
 //    QRegularExpressionMatchIterator it = titleRegex.globalMatch(content);
 //    content.replace(QRegularExpression("title:(.*", "</div>");
     content = content.replace("[[/div]]", "</div>");
-//    content = "<html><body>" + content + "</body></html>";
+    content = "<html><body>" + content + "</body></html>";
 //    qDebug().noquote() << content;
 
     setHtml(content);
 
+//    for (QTextBlock block = begin(); block.isValid(); block = block.next()) {
+//        for (const QTextLayout::FormatRange &r : block.textFormats()) {
+//            if (r.format.anchorHref().isEmpty()) {
+//                continue;
+//            }
+
+//            if (!block.next().isValid()) {
+//                break;
+//            }
+//            qDebug() << r.format.anchorHref();
+//            QString name = r.format.anchorHref();
+//            if (!name.startsWith("collapsable:")) {
+//                continue;
+//            }
+//            name.remove("collapsable:");
+//            block.next().setVisible(false);
+//            m_collapsableBlocks[name] = block.next();
+//        }
+//    }
+    for (const QString &coll : m_collapsableBlocks.keys()) {
+        toggleBlock(coll);
+    }
+
     return true;
+}
+
+void WikiDocument::toggleBlock(const QString &name)
+{
+    qDebug() << "toggling" << name;
+    if (!m_collapsableShowNames.contains(name)) {
+        qWarning() << "can't find" << name;
+        return;
+    }
+
+//    for (const QTextFormat &f : allFormats()) {
+//        qDebug() << f.type();
+//        if (objectForFormat(f)) {
+//            qDebug() << "object" << objectForFormat(f);
+//        }
+//        if (!f.hasProperty(QTextFormat::AnchorName)) {
+//            continue;
+//        }
+//        qDebug() << f.property(QTextFormat::AnchorName) << objectForFormat(f);
+//    }
+
+    bool foundHref = false;
+    bool foundContent = false;
+    const QString matchName = "collapsable:" + name;
+
+    for (QTextBlock block = begin(); block.isValid(); block = block.next()) {
+        qDebug() << block.blockNumber();
+        for (const QTextLayout::FormatRange &r : block.textFormats()) {
+            if (foundHref && foundContent) {
+                break;
+            }
+//            if (!r.format.anchorHref().isEmpty()) {
+//                qDebug() << "anchor href" << r.format.anchorHref();
+//                qDebug().noquote() << block.text().simplified().left(10) + "...";
+//            }
+            if (r.format.anchorNames().contains(matchName)) {
+                QTextCursor cursor(block);
+                qDebug() << cursor.currentFrame();
+                qDebug() << "anchor names" << r.format.anchorNames();
+                qDebug().noquote() << block.text().simplified().left(10) + "...";
+                QTextFrame::iterator it = cursor.currentFrame()->begin();
+                bool wasVisible = false;
+                while(it != cursor.currentFrame()->end()) {
+                    it.currentBlock().setVisible(!it.currentBlock().isVisible());
+                    if (it.currentBlock().isValid()) {
+                        wasVisible = true;
+                    }
+                    it++;
+                }
+                QTextFrameFormat frameFormat = cursor.currentFrame()->frameFormat();
+                QTextCharFormat charFormat = cursor.charFormat();
+                if (wasVisible) {
+                    frameFormat.setProperty(QTextFormat::FrameHeight, 0);
+                    charFormat.setProperty(QTextTableFormat::LineHeight, 0);
+
+                } else {
+                    frameFormat.clearProperty(QTextFormat::FrameHeight);
+                    charFormat.clearProperty(QTextTableFormat::LineHeight);
+                }
+                cursor.setCharFormat(charFormat);
+                cursor.currentFrame()->setFrameFormat(frameFormat);
+                foundContent = true;
+            }
+//            if(r.format.isAnchor()) {
+//                qDebug() << block.text();
+//            }
+//            continue;
+            if (r.format.isTableFormat()) {
+                qDebug() << "==============================";
+                qDebug() << block.text().left(10) + "...";
+            }
+            if (r.format.isFrameFormat()) {
+                qDebug() << "==============================";
+                qDebug() << block.text().left(10) + "...";
+            }
+            if (r.format.isTableCellFormat()) {
+                qDebug() << "==============================";
+                qDebug() << block.text().left(10) + "...";
+            }
+//            qDebug() << r.format.type();
+
+//            if (foundHref) {
+//                if (r.format.isTableFormat()) {
+//                    block.setVisible(!block.isVisible());
+//                    qDebug() << "==============================";
+//                    qDebug() << "visible after" << block.isVisible();
+//                    qDebug() << block.text().left(10) + "...";
+////                    return;
+//                }
+//            }
+
+//            if (r.format.isTableFormat()) {
+//                qDebug() << block.text();
+//            }
+
+            if (r.format.anchorHref() == matchName) {
+                qDebug() << "href" << r.format.anchorHref();
+
+                QTextCursor thisCursor(block);
+                qDebug() << "frame" << thisCursor.currentFrame();
+                thisCursor.setKeepPositionOnInsert(true);
+                thisCursor.movePosition(QTextCursor::StartOfBlock);
+                thisCursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, r.start);
+                thisCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, r.length);
+                qDebug() << "textbefore" << thisCursor.selectedText();
+
+                //            thisCursor.select(QTextCursor::BlockUnderCursor);
+                if (thisCursor.selectedText() == m_collapsableHiddenNames[name]) {
+                    thisCursor.insertText(m_collapsableShowNames[name]);
+                } else {
+                    thisCursor.insertText(m_collapsableHiddenNames[name]);
+                }
+                foundHref = true;
+                continue;
+
+                thisCursor = QTextCursor(block);
+                while (thisCursor.movePosition(QTextCursor::NextBlock)) {
+                    if (!thisCursor.currentTable()) {
+                        qDebug() << "does not have a current table" << thisCursor.block().text();
+                        continue;
+                    }
+//                    qDebug() << "this block text" << thisCursor.block().text();
+                    if (!thisCursor.currentTable()->parentFrame()) {
+                        continue;
+                    }
+//                    thisCursor = QTextCursor(thisCursor.currentTable()->parentFrame());
+                    thisCursor = QTextCursor(thisCursor.currentTable());
+                    qDebug() << "anchor names" << thisCursor.charFormat().anchorNames();
+                    QTextFrameFormat frm = thisCursor.currentFrame()->frameFormat();
+                    frm.setHeight(0);
+//                    thisCursor.currentFrame()->setFrameFormat(frm);
+//                    qDebug() << "this block text" << thisCursor.block().text();
+//                    qDebug() << thisCursor.currentTable();
+//                    qDebug() << thisCursor.currentTable()->parentFrame();
+//                    thisCursor.movePosition(QTextCursor::NextBlock);
+//                    qDebug() << thisCursor.block().text();
+                    thisCursor.block().setVisible(!thisCursor.block().isVisible());
+//                    return;
+                    break;
+
+                }
+                qDebug() << "textafter" << thisCursor.selectedText();
+                //            QTextCursor nextCursor(block.next());
+
+                //            if (block.next().isVisible()) {
+                ////                block.set
+                //            }
+                foundHref = true;
+//                return;
+//                break;
+            }
+
+//            if (foundContent) {
+//                QVector<QTextLayout::FormatRange> formats = block.textFormats();
+
+//                continue;
+//            }
+        }
+    }
+    return;
+
+    for (int i=0; object(i); i++) {
+        QTextTable *f = qobject_cast<QTextTable*>(object(i));
+        if (f) {
+            QTextFrame::iterator it = f->begin();
+            while(it != f->end()) {
+                it.currentBlock().setVisible(!it.currentBlock().isVisible());
+                it++;
+
+            }
+        }
+    }
+    qWarning() << "--------------------------" << name;
+    qWarning() << "failed to find" << name;
+//    qDebug() << m_collapsableBlocks[name].isVisible();
+//    m_collapsableBlocks[name].setVisible(!m_collapsableBlocks[name].isVisible());
 }
 
 QString WikiDocument::preprocess(QString content)
@@ -165,7 +401,7 @@ QString WikiDocument::parseCollapsable(QString content)
     QMap<QString, QString> arguments;
     QRegularExpression argumentSpaceRegex(R"%(([a-zA-Z]+?)="([^"]*)")%");
     match = argumentSpaceRegex.match(header);
-    if (match.hasMatch()) {
+    while (match.hasMatch()) {
         arguments[match.captured(1)] = match.captured(2);
 
         header = header.remove(match.captured(0));
@@ -184,8 +420,9 @@ QString WikiDocument::parseCollapsable(QString content)
     static int collapsables = 0;
     QString collapsableName = "collapsable" + QString::number(collapsables++);
 
+    qDebug() << arguments;
     QString showString = arguments["show"];
-    QString hideString = arguments["show"];
+    QString hideString = arguments["hide"];
     if (showString.isEmpty() && !hideString.isEmpty()) {
         showString = hideString;
     } else if (!showString.isEmpty() && hideString.isEmpty()) {
@@ -194,19 +431,27 @@ QString WikiDocument::parseCollapsable(QString content)
         showString = "Show";
         hideString = "Show";
     }
+//    qDebug() << collapsableName << showString << hideString;
 
     m_collapsableShowNames[collapsableName] = showString;
     m_collapsableHiddenNames[collapsableName] = hideString;
 
     lines.last().remove("[[/collapsible]]");
 
+    qDebug().noquote() << "==============\n\n";
 
-    ret += "<div><a href=\"collapsable:" + collapsableName + "\">" + showString + "</a>\n";
-    ret += lines.join("<br/>\n");
+//    ret += "<div><a href=\"collapsable:" + collapsableName + "\">" + showString + "</a>\n<table id=" +collapsableName + "table><tr><td>";
+    ret += "<a href=\"collapsable:" + collapsableName + "\">" + showString + "</a>\n";
+    // Qt needs a div to let us set an anchor name (with 'id'), but also a table to create a frame so we can get all the content..
+    ret += "<div id='collapsable:" +collapsableName + "'>";
+    ret += "<table><tr><td>";
+    ret += lines.join("\n");
+    ret += "</td></tr></table>";
     ret += "</div>";
 
-//    qDebug().noquote() << ret;
+    qDebug().noquote() << ret;
 
+    qDebug().noquote() << "==============\n\n";
 
 
 //    qDebug() << header;

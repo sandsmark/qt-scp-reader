@@ -2,6 +2,7 @@
 #define WIKIDOCUMENT_H
 
 #include <QTextDocument>
+#include <QTextBlock>
 
 /**
  * @brief A QTextDocument with support for wikisyntax
@@ -12,6 +13,7 @@ public:
     WikiDocument(QObject *parent);
 
     bool load(const QString &path);
+    void toggleBlock(const QString &name);
 
 private:
     QString preprocess(QString content);
@@ -21,6 +23,7 @@ private:
 
     QMap<QString, QString> m_collapsableHiddenNames;
     QMap<QString, QString> m_collapsableShowNames;
+    QMap<QString, QTextBlock> m_collapsableBlocks;
 };
 
 #endif // WIKIDOCUMENT_H

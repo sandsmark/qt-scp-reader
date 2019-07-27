@@ -52,8 +52,12 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
 
 void Widget::onLinkClicked(const QUrl &url)
 {
+//    qDebug() << url.scheme() << "path:" << url.path() << "url" << url;
+
     if (url.scheme() == "collapsable") {
-        qDebug() << url.scheme() << url.path();
+//        qDebug() << url.scheme() << url.path();
+        m_document->toggleBlock(url.path());
+        m_browser->update();
         return;
     }
 
