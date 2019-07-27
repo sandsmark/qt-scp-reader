@@ -13,13 +13,12 @@ public:
     WikiDocument(QObject *parent);
 
     bool load(const QString &path);
-    void toggleBlock(const QString &name);
+    void toggleCollapsable(const QString &name);
 
 private:
     QString preprocess(QString content);
     QString parseTable(const QString &tableText);
     QString parseCollapsable(QString content);
-//    void parseCollapsable(QString *content);
 
     QMap<QString, QString> m_collapsableHiddenNames;
     QMap<QString, QString> m_collapsableShowNames;
