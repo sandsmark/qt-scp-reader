@@ -2,9 +2,9 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include <QTextBrowser>
 
 class WikiDocument;
-class QTextBrowser;
 class QListView;
 class QSortFilterProxyModel;
 
@@ -20,14 +20,9 @@ protected:
 //    void paintEvent(QPaintEvent *) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
-private slots:
-    void onLinkClicked(const QUrl &url);
-
 private:
     WikiDocument *m_document;
     QTextBrowser *m_browser;
-    QListView *m_pagesList;
-    QSortFilterProxyModel *m_pagesModel;
 };
 
 #endif // WIDGET_H

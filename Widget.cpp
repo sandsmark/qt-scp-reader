@@ -9,6 +9,7 @@
 #include <QLineEdit>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QPushButton>
 
 #include <QListView>
 #include <QSortFilterProxyModel>
@@ -21,48 +22,63 @@ Widget::Widget(QWidget *parent)
 {
     QHBoxLayout *mainLayout = new QHBoxLayout;
     setLayout(mainLayout);
-
     QVBoxLayout *leftLayout = new QVBoxLayout;
     mainLayout->addLayout(leftLayout);
+    QHBoxLayout *navigationLayout = new QHBoxLayout;
+    leftLayout->addLayout(navigationLayout);
+
+    QPushButton *backButton = new QPushButton("Back");
+    navigationLayout->addWidget(backButton);
+    backButton->setEnabled(false);
+    QPushButton *forwardButton = new QPushButton("Forward");
+    forwardButton->setEnabled(false);
+    navigationLayout->addWidget(forwardButton);
 
     QLineEdit *pagesFilterEdit = new QLineEdit;
     pagesFilterEdit->setPlaceholderText("Search...");
     leftLayout->addWidget(pagesFilterEdit);
 
-    m_pagesList = new QListView;
-    leftLayout->addWidget(m_pagesList);
+    QListView *pageListView = new QListView;
+    leftLayout->addWidget(pageListView);
 
     QStandardItemModel *pagesModel = new QStandardItemModel(this);
     for (QString fileName : QDir(":/pages").entryList({"*.txt"}, QDir::Files)) {
         fileName.remove(".txt");
         pagesModel->appendRow(new QStandardItem(fileName));
     }
-    m_pagesModel = new QSortFilterProxyModel(this);
-    m_pagesModel->setSourceModel(pagesModel);
-    m_pagesList->setModel(m_pagesModel);
-    m_pagesList->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+
+    QSortFilterProxyModel *searchModel = new QSortFilterProxyModel(this);
+    searchModel->setSourceModel(pagesModel);
+    pageListView->setModel(searchModel);
+    pageListView->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
 
     pagesFilterEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
 
-    m_document->load("members-pages");
-
-//    m_document->load("scp-2886");
-    //m_document->load("scp-458");
     m_document->setDocumentMargin(20);
 
-    m_browser = new QTextBrowser(this);
+    m_browser = new WikiBrowser(this);
     m_browser->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     m_browser->setDocument(m_document);
     layout()->addWidget(m_browser);
     layout()->setMargin(0);
 
-    m_browser->setOpenLinks(false);
-
-    connect(m_browser, &QTextBrowser::anchorClicked, this, &Widget::onLinkClicked);
-    connect(m_pagesList, &QListView::clicked, m_browser, [=](const QModelIndex &index) {
-        m_browser->anchorClicked(QUrl(index.data().toString()));
+//    m_browser->setOpenLinks(false);
+    connect(m_browser, &QTextBrowser::historyChanged, this, []() {
+        qWarning() << "history changed";
     });
-    connect(pagesFilterEdit, &QLineEdit::textChanged, m_pagesModel, &QSortFilterProxyModel::setFilterFixedString);
+    connect(m_browser, &QTextBrowser::sourceChanged, this, [](const QUrl &src) {
+        qWarning() << "source changed" << src;
+    });
+
+    connect(m_browser, &QTextBrowser::backwardAvailable, backButton, &Widget::setEnabled);
+    connect(m_browser, &QTextBrowser::forwardAvailable, forwardButton, &Widget::setEnabled);
+    connect(backButton, &QPushButton::clicked, m_browser, &QTextBrowser::backward);
+    connect(forwardButton, &QPushButton::clicked, m_browser, &QTextBrowser::forward);
+    connect(pageListView, &QListView::clicked, m_browser, [=](const QModelIndex &index) {
+        m_browser->setSource("qrc:///pages/" + index.data().toString() + ".txt");
+    });
+    m_browser->setSource(QString("qrc:///pages/members-pages.txt"));
+    connect(pagesFilterEdit, &QLineEdit::textChanged, searchModel, &QSortFilterProxyModel::setFilterFixedString);
 }
 
 Widget::~Widget()
@@ -78,18 +94,4 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
     qDebug() << "click at" << event->pos();
 
 
-}
-
-void Widget::onLinkClicked(const QUrl &url)
-{
-    qDebug() << url.scheme() << "path:" << url.path() << "url" << url;
-
-    if (url.scheme() == "collapsable") {
-//        qDebug() << url.scheme() << url.path();
-        m_document->toggleCollapsable(url.path());
-        m_browser->update();
-        return;
-    }
-
-    m_document->load(url.toString());
 }

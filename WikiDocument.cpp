@@ -15,16 +15,16 @@ WikiDocument::WikiDocument(QObject *parent) :
 {
 }
 
-bool WikiDocument::load(const QString &path)
+QString WikiBrowser::createHtml(const QString &path)
 {
-    QString content = getFileContents(path);//QString::fromUtf8(file.readAll());
+    QString content = getFileContents(path);
     if (content.isEmpty()) {
         qWarning() << "Failed to load" << path;
-        return false;
+        return QString();
     }
 
     if (!preprocess(&content)) {
-        return false;
+        return QString();
     }
 
     // Garbage, TODO: parse properly
@@ -174,7 +174,7 @@ bool WikiDocument::load(const QString &path)
             qWarning() << "Someone trying to be funny";
             url += ":";
         }
-        qDebug() << match.capturedTexts();
+//        qDebug() << match.capturedTexts();
         content = content.replace(match.captured(0), "<a href=" + match.captured(1) + ">" + match.captured(2) + "</a>");
         match = linkRegex.match(content);
     }
@@ -182,8 +182,8 @@ bool WikiDocument::load(const QString &path)
     content.replace(QRegularExpression("^$"), "<br/>");
 
 
-    qDebug() << "\n\n\n======";
-    qDebug().noquote() << content.mid(0, 1000);
+//    qDebug() << "\n\n\n======";
+//    qDebug().noquote() << content.mid(0, 1000);
 
     QString html = "<html><head>";
     if (1){
@@ -230,14 +230,14 @@ bool WikiDocument::load(const QString &path)
 
     //qDebug().noquote() << html;
 
-    setHtml(html);
+//    setHtml(html);
 
 
-    for (const QString &collapsable : m_collapsableShowNames.keys()) {
-        toggleCollapsable(collapsable);
-    }
+//    for (const QString &collapsable : m_collapsableShowNames.keys()) {
+//        toggleCollapsable(collapsable);
+//    }
 
-    return true;
+    return html;
 }
 
 void WikiDocument::toggleCollapsable(const QString &name)
@@ -250,41 +250,42 @@ void WikiDocument::toggleCollapsable(const QString &name)
 
     bool foundHref = false;
     bool foundContent = false;
-    const QString matchName = "collapsable:" + name;
+    const QString matchName = name;
 
-    int dirtyStart = characterCount(), dirtyEnd = 0;
+//    int dirtyStart = characterCount(), dirtyEnd = 0;
     for (QTextBlock block = begin(); block.isValid(); block = block.next()) {
         for (const QTextLayout::FormatRange &r : block.textFormats()) {
             if (foundHref && foundContent) {
                 break;
             }
             if (r.format.anchorNames().contains(matchName)) {
-                dirtyStart = qMin(block.position(), dirtyStart);
-                dirtyEnd = qMax(block.position() + block.length(), dirtyEnd);
+//                dirtyStart = qMin(block.position(), dirtyStart);
+//                dirtyEnd = qMax(block.position() + block.length(), dirtyEnd);
                 QTextCursor cursor(block);
                 QTextFrame::iterator it = cursor.currentFrame()->begin();
-                qDebug() << cursor.currentFrame();
+//                qDebug() << cursor.currentFrame();
                 bool wasVisible = false;
                 while(it != cursor.currentFrame()->end()) {
-                    it.currentBlock().setVisible(!it.currentBlock().isVisible());
-                    qDebug() << it.currentBlock().text();
                     if (it.currentBlock().isVisible()) {
                         wasVisible = true;
                     }
-                    dirtyStart = qMin(it.currentBlock().position(), dirtyStart);
-                    dirtyEnd = qMax(it.currentBlock().position() + it.currentBlock().length(), dirtyEnd);
+                    it.currentBlock().setVisible(!it.currentBlock().isVisible());
+//                    qDebug() << it.currentBlock().text();
+//                    dirtyStart = qMin(it.currentBlock().position(), dirtyStart);
+//                    dirtyEnd = qMax(it.currentBlock().position() + it.currentBlock().length(), dirtyEnd);
                     it++;
                 }
-                QTextFrameFormat ff = cursor.currentFrame()->frameFormat();
-                if (wasVisible) {
-                    ff.setHeight(QTextLength(QTextLength::FixedLength, 0));
-                    ff.setWidth(QTextLength(QTextLength::FixedLength, 0));
-                } else {
-                    ff.setHeight(QTextLength(QTextLength::PercentageLength, 100));
-                    ff.setWidth(QTextLength(QTextLength::PercentageLength, 100));
-                }
-                cursor.currentFrame()->setFrameFormat(ff);
-                //cursor.currentFrame()->setFrameFormat();
+                qDebug() << "was visible/" << wasVisible;
+//                QTextFrameFormat ff = cursor.currentFrame()->frameFormat();
+//                if (wasVisible) {
+//                    ff.setHeight(QTextLength(QTextLength::FixedLength, 0));
+//                    ff.setWidth(QTextLength(QTextLength::FixedLength, 0));
+//                } else {
+//                    ff.setHeight(QTextLength(QTextLength::PercentageLength, 100));
+//                    ff.setWidth(QTextLength(QTextLength::PercentageLength, 100));
+//                }
+//                cursor.currentFrame()->setFrameFormat(ff);
+                cursor.currentFrame()->setFrameFormat(cursor.currentFrame()->frameFormat());
 
 
                 //block.setVisible(false);
@@ -307,7 +308,7 @@ void WikiDocument::toggleCollapsable(const QString &name)
                 continue;
             }
 
-            if (r.format.anchorHref() == matchName) {
+            if (r.format.anchorHref() == "#" + matchName) {
                 QTextCursor thisCursor(block);
                 thisCursor.movePosition(QTextCursor::StartOfBlock);
                 thisCursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, r.start);
@@ -323,8 +324,8 @@ void WikiDocument::toggleCollapsable(const QString &name)
 
         }
     }
-    qDebug() << dirtyStart << dirtyEnd;
-    markContentsDirty(dirtyStart, dirtyEnd - dirtyStart);
+//    qDebug() << dirtyStart << dirtyEnd;
+//    markContentsDirty(dirtyStart, dirtyEnd - dirtyStart);
     if (!foundHref) {
         qWarning() << "Failed to find link";
     }
@@ -333,7 +334,7 @@ void WikiDocument::toggleCollapsable(const QString &name)
     }
 }
 
-bool WikiDocument::preprocess(QString *content, int depth)
+bool WikiBrowser::preprocess(QString *content, int depth)
 {
     if (depth > 2) {
         qDebug() << "Too many levels of preprocessing";
@@ -397,7 +398,7 @@ bool WikiDocument::preprocess(QString *content, int depth)
     return true;
 }
 
-QString WikiDocument::parseTable(const QString &tableText)
+QString WikiBrowser::parseTable(const QString &tableText)
 {
     QString ret;
     ret += "<table class='wiki-content-table'>\n";
@@ -424,7 +425,7 @@ QString WikiDocument::parseTable(const QString &tableText)
 
 }
 
-QString WikiDocument::parseCollapsable(QString content)
+QString WikiBrowser::parseCollapsable(QString content)
 {
     QString ret;
 
@@ -471,10 +472,10 @@ QString WikiDocument::parseCollapsable(QString content)
 
     lines.last().remove("[[/collapsible]]");
 
-    ret += "<div class='collapsible-block-unfolded-link'><a class='collapsible-block-link' href=\"collapsable:" + collapsableName + "\">" + hideString + "</a></div>\n"; // start with hidestring, we need to use toggleBlock() to hide the blocks..
+    ret += "<div class='collapsible-block-unfolded-link'><a class='collapsible-block-link' href=\"#" + collapsableName + "\">" + hideString + "</a></div>\n"; // start with hidestring, we need to use toggleBlock() to hide the blocks..
 
     // Qt needs a div to let us set an anchor name (with 'id'), but also a table to create a frame so we can get all the content..
-    ret += "<div id='collapsable:" +collapsableName + "'>";
+    ret += "<div id='" +collapsableName + "'>";
     ret += "<table><tr><td>";
     ret += lines.join("\n");
     ret += "</td></tr></table>";
@@ -483,14 +484,14 @@ QString WikiDocument::parseCollapsable(QString content)
     return ret;
 }
 
-QString WikiDocument::getFileContents(const QString &filePath)
+QString WikiBrowser::getFileContents(const QString &filePath)
 {
-    QString filename = QUrl(filePath).fileName();
+    QString filename = QUrl(filePath).path();
     if (filename.isEmpty()) {
         filename = filePath;
     }
 
-    QFile file(":/pages/" + filename + ".txt");
+    QFile file(":" + filename);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning().noquote() << "Failed to open" << file.fileName() << file.errorString();
         return QString();
@@ -498,4 +499,51 @@ QString WikiDocument::getFileContents(const QString &filePath)
 
 
     return QString::fromUtf8(file.readAll());
+}
+
+
+void WikiBrowser::setSource(const QUrl &url)
+{
+    QString fileAfter = url.toString(QUrl::RemoveFragment);
+    QString fileBefore = source().toString(QUrl::RemoveFragment);
+
+    QTextBrowser::setSource(url);
+
+    WikiDocument *wikiDocument = qobject_cast<WikiDocument*>(document());
+    if (!wikiDocument) {
+        qWarning() << "Invalid document";
+        return;
+    }
+    if (fileAfter != fileBefore) {
+        for (const QString &collapsable : m_collapsableShowNames.keys()) {
+            wikiDocument->toggleCollapsable(collapsable);
+        }
+
+        return;
+    }
+
+    if (!url.fragment().isEmpty()) {
+        wikiDocument->toggleCollapsable(url.fragment());
+    }
+}
+
+QVariant WikiBrowser::loadResource(int type, const QUrl &name)
+{
+    if (type != QTextDocument::HtmlResource) {
+        return QTextBrowser::loadResource(type, name);
+    }
+
+    qDebug() << "Browser" << type << name;
+    QString html = createHtml(name.toString());
+    WikiDocument *wikiDocument = qobject_cast<WikiDocument*>(document());
+
+    if (!wikiDocument) {
+        qWarning() << "Invalid document";
+        return html;
+    }
+
+    wikiDocument->m_collapsableShowNames = m_collapsableShowNames;
+    wikiDocument->m_collapsableHiddenNames = m_collapsableHiddenNames;
+
+    return html;
 }

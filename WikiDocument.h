@@ -3,28 +3,47 @@
 
 #include <QTextDocument>
 #include <QTextBlock>
+#include <QTextBrowser>
 
 /**
  * @brief A QTextDocument with support for wikisyntax
  */
 class WikiDocument : public QTextDocument
 {
+    Q_OBJECT
+
 public:
     WikiDocument(QObject *parent);
 
-    bool load(const QString &path);
     void toggleCollapsable(const QString &name);
+
+
+    QMap<QString, QString> m_collapsableHiddenNames;
+    QMap<QString, QString> m_collapsableShowNames;
+};
+
+class WikiBrowser  : public QTextBrowser
+{
+    Q_OBJECT
+
+public:
+    WikiBrowser(QWidget *parent) : QTextBrowser(parent) {  }
+
+public slots:
+    void setSource(const QUrl &url) override;
+
+protected:
+    QVariant loadResource(int type, const QUrl &name) override;
 
 private:
     bool preprocess(QString *content, int depth=0);
     QString parseTable(const QString &tableText);
     QString parseCollapsable(QString content);
     QString getFileContents(const QString &filePath);
+    QString createHtml(const QString &path);
 
     QMap<QString, QString> m_collapsableHiddenNames;
     QMap<QString, QString> m_collapsableShowNames;
-    QMap<QString, QTextBlock> m_collapsableBlocks;
-    QMap<QString, QTextFrameFormat> m_collapsedFrameFormats;
 };
 
 #endif // WIKIDOCUMENT_H
