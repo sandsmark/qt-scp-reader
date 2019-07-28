@@ -12,10 +12,13 @@ Widget::Widget(QWidget *parent)
     : QWidget(parent),
       m_document(new WikiDocument(this))
 {
-//    m_document->load("/home/sandsmark/src/wdotcrawl/scp/members-pages.txt");
-    m_document->load("/home/sandsmark/src/wdotcrawl/scp/scp-458.txt");
+    m_document->load("members-pages");
+//    m_document->load("scp-2886");
+    //m_document->load("scp-458");
+    m_document->setDocumentMargin(20);
     setLayout(new QVBoxLayout);
     m_browser = new QTextBrowser(this);
+    m_browser->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     m_browser->setDocument(m_document);
     layout()->addWidget(m_browser);
     layout()->setMargin(0);
@@ -50,5 +53,5 @@ void Widget::onLinkClicked(const QUrl &url)
         return;
     }
 
-
+    m_document->load(url.toString());
 }

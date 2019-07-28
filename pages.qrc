@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>pages/authors-pages.txt</file>
+        <file>pages/members-pages.txt</file>
+        <file>pages/scp-458.txt</file>
+        <file>pages/scp-2886.txt</file>
+    </qresource>
+</RCC>
