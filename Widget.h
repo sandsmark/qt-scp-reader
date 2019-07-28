@@ -5,6 +5,8 @@
 
 class WikiDocument;
 class QTextBrowser;
+class QListView;
+class QSortFilterProxyModel;
 
 class Widget : public QWidget
 {
@@ -22,9 +24,10 @@ private slots:
     void onLinkClicked(const QUrl &url);
 
 private:
-
     WikiDocument *m_document;
     QTextBrowser *m_browser;
+    QListView *m_pagesList;
+    QSortFilterProxyModel *m_pagesModel;
 };
 
 #endif // WIDGET_H
