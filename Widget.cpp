@@ -42,15 +42,27 @@ Widget::Widget(QWidget *parent)
     leftLayout->addWidget(pageListView);
 
     QStandardItemModel *pagesModel = new QStandardItemModel(this);
-    for (QString fileName : QDir(":/pages").entryList({"*.txt"}, QDir::Files)) {
-        fileName.remove(".txt");
-        pagesModel->appendRow(new QStandardItem(fileName));
+    for (const QString &fileName : QDir(":/pages").entryList({"*.txt"}, QDir::Files)) {
+        QFile file(":/pages/" + fileName);
+        if (!file.open(QIODevice::ReadOnly)) {
+            qWarning() << "failed to open" << fileName;
+            continue;
+        }
+        QString title = QString::fromUtf8(file.readLine().trimmed()).remove("title:");
+        if (title.isEmpty()) {
+            title = fileName;
+            title.remove(".txt");
+        }
+
+        QStandardItem *item = new QStandardItem(title);
+        item->setData(fileName, Qt::UserRole);
+        pagesModel->appendRow(item);
     }
 
     QSortFilterProxyModel *searchModel = new QSortFilterProxyModel(this);
     searchModel->setSourceModel(pagesModel);
     pageListView->setModel(searchModel);
-    pageListView->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Expanding);
+    pageListView->setMaximumWidth(pageListView->sizeHintForColumn(0));
 
     pagesFilterEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
 
@@ -75,7 +87,7 @@ Widget::Widget(QWidget *parent)
     connect(backButton, &QPushButton::clicked, m_browser, &QTextBrowser::backward);
     connect(forwardButton, &QPushButton::clicked, m_browser, &QTextBrowser::forward);
     connect(pageListView, &QListView::clicked, m_browser, [=](const QModelIndex &index) {
-        m_browser->setSource("qrc:///pages/" + index.data().toString() + ".txt");
+        m_browser->setSource("qrc:///pages/" + index.data(Qt::UserRole).toString());
     });
     m_browser->setSource(QString("qrc:///pages/members-pages.txt"));
     connect(pagesFilterEdit, &QLineEdit::textChanged, searchModel, &QSortFilterProxyModel::setFilterFixedString);
