@@ -61,8 +61,11 @@ QString WikiBrowser::createHtml(const QString &path)
     QRegularExpression boldRegex(R"(\*\*([^\*]*)\*\*)");
     content.replace(boldRegex, "<b>\\1</b>");
 
-    QRegularExpression italicRegex(R"(//([^\/]*)//)");
+    QRegularExpression italicRegex(R"(//([^/]*)//)");
     content.replace(italicRegex, "<i>\\1</i>");
+
+    QRegularExpression strikethroughRegex(R"(--([^-]*)--)");
+    content.replace(strikethroughRegex, "<s>\\1</s>");
 
     QRegularExpression tableRegex(R"((\|\|[^\|].*\|\|))", QRegularExpression::DotMatchesEverythingOption);
     match = tableRegex.match(content);
@@ -92,8 +95,16 @@ QString WikiBrowser::createHtml(const QString &path)
     QRegularExpression pageRegex(R"(\[\[\[([^\[]+)\]\]\])");
     match = pageRegex.match(content);
     while (match.hasMatch()) {
-        QString page = match.captured(1);
-        QString target = page.toLower().replace(nonAlphaRegex, "-") + ".txt";
+        QString page = match.captured(1).trimmed();
+        QString target;
+        int separator = page.indexOf('|');
+        if (separator == -1) {
+            target = page;
+        } else {
+            target = page.left(separator).trimmed();
+            page = page.mid(separator + 1).trimmed();
+        }
+        target = target.toLower().replace(nonAlphaRegex, "-") + ".txt";
         content = content.replace(match.captured(0), "<a href='" + target + "'>" + page + "</a>");
         match = pageRegex.match(content);
     }
@@ -252,6 +263,7 @@ void WikiDocument::toggleCollapsable(const QString &name)
     bool foundContent = false;
     const QString matchName = name;
 
+    bool wasVisible = true;
 //    int dirtyStart = characterCount(), dirtyEnd = 0;
     for (QTextBlock block = begin(); block.isValid(); block = block.next()) {
         for (const QTextLayout::FormatRange &r : block.textFormats()) {
@@ -262,30 +274,78 @@ void WikiDocument::toggleCollapsable(const QString &name)
 //                dirtyStart = qMin(block.position(), dirtyStart);
 //                dirtyEnd = qMax(block.position() + block.length(), dirtyEnd);
                 QTextCursor cursor(block);
-                QTextFrame::iterator it = cursor.currentFrame()->begin();
-//                qDebug() << cursor.currentFrame();
-                bool wasVisible = false;
-                while(it != cursor.currentFrame()->end()) {
-                    if (it.currentBlock().isVisible()) {
-                        wasVisible = true;
-                    }
-                    it.currentBlock().setVisible(!it.currentBlock().isVisible());
+                QTextFrame  *frame = cursor.currentFrame();
+                QTextFrame::iterator it = frame->begin();
+
+                cursor.movePosition(QTextCursor::PreviousBlock);
+
+//                cursor = QTextCursor(it.currentBlock());
+//                bool wasVisible = false;
+                while(it != frame->end()) {
+//                    QTextCursor c(it.currentBlock());
+//                    qDebug() << c.charFormat().fontPointSize() << c.blockCharFormat().fontPointSize();
+//                    if (it.currentBlock().isVisible()) {
+//                        wasVisible = true;
+//                    }
+                    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
+//                    it.currentBlock().setVisible(!it.currentBlock().isVisible());
 //                    qDebug() << it.currentBlock().text();
 //                    dirtyStart = qMin(it.currentBlock().position(), dirtyStart);
 //                    dirtyEnd = qMax(it.currentBlock().position() + it.currentBlock().length(), dirtyEnd);
                     it++;
                 }
-                qDebug() << "was visible/" << wasVisible;
+//                    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
+                qDebug() << "\n\n\n";
+                qDebug().noquote() << cursor.selection().toHtml();
+                qDebug() << "\n\n\n";
+//                cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
+//                if (wasVisible) {
+//                    m_hiddenFragments[name] = cursor.selection();
+//                    cursor.removeSelectedText();
+//                } else {
+//                    cursor.insertFragment(m_hiddenFragments[name]);
+//                }
+
+//                qDebug() << cursor.selection();
+//                it = cursor.currentFrame()->begin();
+//                while(it != cursor.currentFrame()->end()) {
+//                    QTextCursor c(it.currentBlock());
+//                    qDebug() << c.charFormat().fontPointSize() << c.blockCharFormat().fontPointSize();
+//                    QTextBlockFormat bf = c.blockFormat();
+//                    if (wasVisible) {
+//                        bf.setLineHeight(0, QTextBlockFormat::FixedHeight);
+//                        bf.setTopMargin(0);
+//                        bf.setBottomMargin(0);
+//                    } else {
+//                        bf.setLineHeight(100, QTextBlockFormat::ProportionalHeight);
+//                        bf.setTopMargin(10);
+//                        bf.setBottomMargin(10);
+//                    }
+//                    c.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+////                    qDebug() << c.selectedText();
+//                    c.setBlockFormat(bf);
+////                    qDebug() << it.currentBlock().text();
+////                    dirtyStart = qMin(it.currentBlock().position(), dirtyStart);
+////                    dirtyEnd = qMax(it.currentBlock().position() + it.currentBlock().length(), dirtyEnd);
+//                    it++;
+//                }
+//                qDebug() << "was visible/" << wasVisible;
 //                QTextFrameFormat ff = cursor.currentFrame()->frameFormat();
 //                if (wasVisible) {
-//                    ff.setHeight(QTextLength(QTextLength::FixedLength, 0));
-//                    ff.setWidth(QTextLength(QTextLength::FixedLength, 0));
+//                    ff.setHeight(0);
+//                    ff.setPadding(0);
+//                    ff.setMargin(0);
+////                    ff.setHeight(QTextLength(QTextLength::FixedLength, 0));
+////                    ff.setWidth(QTextLength(QTextLength::FixedLength, 0));
 //                } else {
+//                    ff.setMargin(10);
+//                    ff.setPadding(10);
+//                    ff.setHeight(0);
 //                    ff.setHeight(QTextLength(QTextLength::PercentageLength, 100));
-//                    ff.setWidth(QTextLength(QTextLength::PercentageLength, 100));
+////                    ff.setWidth(QTextLength(QTextLength::PercentageLength, 100));
 //                }
 //                cursor.currentFrame()->setFrameFormat(ff);
-                cursor.currentFrame()->setFrameFormat(cursor.currentFrame()->frameFormat());
+//                cursor.currentFrame()->setFrameFormat(cursor.currentFrame()->frameFormat());
 
 
                 //block.setVisible(false);
@@ -316,8 +376,11 @@ void WikiDocument::toggleCollapsable(const QString &name)
 
                 if (thisCursor.selectedText() == m_collapsableHiddenNames[name]) {
                     thisCursor.insertText(m_collapsableShowNames[name]);
+                    wasVisible = false;
                 } else {
+                    wasVisible = true;
                     thisCursor.insertText(m_collapsableHiddenNames[name]);
+//                    thisCursor.insertFragment(m_hiddenFragments[name]);
                 }
                 foundHref = true;
             }

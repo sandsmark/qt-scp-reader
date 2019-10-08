@@ -4,6 +4,7 @@
 #include <QTextDocument>
 #include <QTextBlock>
 #include <QTextBrowser>
+#include <QTextDocumentFragment>
 
 /**
  * @brief A QTextDocument with support for wikisyntax
@@ -20,6 +21,7 @@ public:
 
     QMap<QString, QString> m_collapsableHiddenNames;
     QMap<QString, QString> m_collapsableShowNames;
+    QMap<QString, QTextDocumentFragment> m_hiddenFragments;
 };
 
 class WikiBrowser  : public QTextBrowser
