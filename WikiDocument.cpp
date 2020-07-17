@@ -39,6 +39,23 @@ QString WikiBrowser::createHtml(const QString &path)
     Q_ASSERT(titleRegex.isValid());
     content.replace(titleRegex, "<h1>\\1</h1>\n");
 
+    QRegularExpressionMatch match;
+
+    // Headers
+    for (int i=6; i > 0; i--) {
+        QRegularExpression headerRegex("^" + QStringLiteral("\\+").repeated(i) + " (.+)$", QRegularExpression::MultilineOption);
+        Q_ASSERT(headerRegex.isValid());
+        match = headerRegex.match(content);
+        while (match.hasMatch()) {
+            content.replace(match.captured(0), "<h" + QString::number(i) + ">" + match.captured(1).toHtmlEscaped() + "</h" + QString::number(i) + ">");
+            match = headerRegex.match(content);
+        }
+    }
+
+    // Horizontal rules/lines
+    QRegularExpression hruleRegex("^\\s*----+\\s*$", QRegularExpression::MultilineOption);
+    content.replace(hruleRegex, "\n<hr>\n");
+
     // Quotes
     QRegularExpression quoteRegex(R"(^(>.*?)\n^$)", QRegularExpression::DotMatchesEverythingOption | QRegularExpression::MultilineOption);
     content.replace(quoteRegex, "<blockquote>\n\\1\n</blockquote>");
@@ -54,7 +71,7 @@ QString WikiBrowser::createHtml(const QString &path)
 
     // Collapsible sections (the most annoying parts)
     QRegularExpression collapsableRegex(R"(\[\[collapsible.*?\[\[\/collapsible]])", QRegularExpression::DotMatchesEverythingOption);
-    QRegularExpressionMatch match = collapsableRegex.match(content);
+    match = collapsableRegex.match(content);
     while (match.hasMatch()) {
         content.replace(match.captured(0), parseCollapsable(match.captured(0)));
         match = collapsableRegex.match(content);
@@ -81,17 +98,6 @@ QString WikiBrowser::createHtml(const QString &path)
     while (match.hasMatch()) {
         content.replace(match.captured(0), parseTable(match.captured(1)));
         match = tableRegex.match(content);
-    }
-
-    // Headers
-    for (int i=1; i<= 6; i++) {
-        QRegularExpression headerRegex("^" + QStringLiteral("\\+").repeated(i) + " (.+)$");
-        Q_ASSERT(headerRegex.isValid());
-        match = headerRegex.match(content);
-        while (match.hasMatch()) {
-            content.replace(match.captured(0), "<h" + QString::number(i) + ">" + match.captured(1).toHtmlEscaped() + "</h" + QString::number(i) + ">");
-            match = headerRegex.match(content);
-        }
     }
 
 //    const QSet<QString> moduleBlacklist({"Rate"});
