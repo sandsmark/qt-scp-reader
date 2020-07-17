@@ -36,6 +36,7 @@ QString WikiBrowser::createHtml(const QString &path)
     content.replace(">>", "&raquo;");
 
     QRegularExpression titleRegex("title:(.+)");
+    Q_ASSERT(titleRegex.isValid());
     content.replace(titleRegex, "<h1>\\1</h1>\n");
 
     // Quotes
@@ -493,6 +494,7 @@ QString WikiBrowser::parseCollapsable(QString content)
     QString ret;
 
     QRegularExpression hRegex(R"%(\[\[collapsible(.*?)\]\])%");
+    Q_ASSERT(hRegex.isValid());
     QRegularExpressionMatch match = hRegex.match(content);
     QString header;
     if (match.hasMatch()) {
@@ -508,6 +510,7 @@ QString WikiBrowser::parseCollapsable(QString content)
 
     QMap<QString, QString> arguments;
     QRegularExpression argumentSpaceRegex(R"%(([a-zA-Z]+?)="([^"]*)")%");
+    Q_ASSERT(argumentSpaceRegex.isValid());
     match = argumentSpaceRegex.match(header);
     while (match.hasMatch()) {
         arguments[match.captured(1)] = match.captured(2);
