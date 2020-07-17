@@ -68,6 +68,10 @@ QString WikiBrowser::createHtml(const QString &path)
     QRegularExpression strikethroughRegex(R"(--([^-]*)--)");
     content.replace(strikethroughRegex, "<s>\\1</s>");
 
+    QRegularExpression superscriptRegex(R"(\^\^([^\^]*)\^\^)");
+    Q_ASSERT(superscriptRegex.isValid());
+    content.replace(superscriptRegex, "<sup>\\1</sup>");
+
     QRegularExpression tableRegex(R"((\|\|[^\|].*\|\|))", QRegularExpression::DotMatchesEverythingOption);
     match = tableRegex.match(content);
     while (match.hasMatch()) {
