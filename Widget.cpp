@@ -91,6 +91,7 @@ Widget::Widget(QWidget *parent)
     });
     m_browser->setSource(QString("qrc:///pages/members-pages.txt"));
     connect(pagesFilterEdit, &QLineEdit::textChanged, searchModel, &QSortFilterProxyModel::setFilterFixedString);
+    resize(1024, 768);
 }
 
 Widget::~Widget()
