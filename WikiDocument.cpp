@@ -57,9 +57,12 @@ QString WikiBrowser::createHtml(const QString &path)
     content.replace(hruleRegex, "\n<hr>\n");
 
     // Quotes
+    content.replace(QRegularExpression("^\\s*>\\s*$", QRegularExpression::MultilineOption), "    <br/>"); // empty lines with just ">" creates new lines
     QRegularExpression quoteRegex(R"(^(>.*?)\n^$)", QRegularExpression::DotMatchesEverythingOption | QRegularExpression::MultilineOption);
     content.replace(quoteRegex, "<blockquote>\n\\1\n</blockquote>");
     content.replace(QRegularExpression("^>", QRegularExpression::MultilineOption), "   "); // remove them, could do it in one pass but meh
+
+    content.replace("\xc2\xa0\xc2\xa0\xc2\xa0\xc2\xa0", "<br/>");
 
     // Paragraphs
     QRegularExpression paragraphRegex(R"(^$\n([^\[].+)\n^)", QRegularExpression::MultilineOption);
