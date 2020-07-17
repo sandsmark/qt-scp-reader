@@ -268,11 +268,7 @@ QString WikiBrowser::createHtml(const QString &path)
         match = linkRegex.match(content);
     }
 
-    content.replace(QRegularExpression("^$"), "<br/>");
-
-
 //    qDebug() << "\n\n\n======";
-//    qDebug().noquote() << content.mid(0, 1000);
 
     QString html = "<html><head>";
     if (1){
