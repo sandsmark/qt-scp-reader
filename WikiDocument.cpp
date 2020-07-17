@@ -42,16 +42,17 @@ QString WikiBrowser::createHtml(const QString &path)
     // Quotes
     QRegularExpression quoteRegex(R"(^(>.*?)\n^$)", QRegularExpression::DotMatchesEverythingOption | QRegularExpression::MultilineOption);
     content.replace(quoteRegex, "<blockquote>\n\\1\n</blockquote>");
-    //content.replace(quoteRegex, "<pre>\n\\1\n</pre>");
     content.replace(QRegularExpression("^>", QRegularExpression::MultilineOption), "   "); // remove them, could do it in one pass but meh
 
-//    // Paragraphs
+    // Paragraphs
     QRegularExpression paragraphRegex(R"(^$\n([^\[].+)\n^)", QRegularExpression::MultilineOption);
     content.replace(paragraphRegex, "\n<p>\\1</p>\n\n");
 
+    // Links to paragraphs
     QRegularExpression paragraphLinkRegex(R"(^$\n(\[\[\[[^\[].+?)\n^)", QRegularExpression::MultilineOption);
     content.replace(paragraphLinkRegex, "\n<p>\\1</p>\n\n");
 
+    // Collapsible sections (the most annoying parts)
     QRegularExpression collapsableRegex(R"(\[\[collapsible.*?\[\[\/collapsible]])", QRegularExpression::DotMatchesEverythingOption);
     QRegularExpressionMatch match = collapsableRegex.match(content);
     while (match.hasMatch()) {
@@ -59,6 +60,7 @@ QString WikiBrowser::createHtml(const QString &path)
         match = collapsableRegex.match(content);
     }
 
+    // Inline formatting (bold, italic, strikethrought, etc.)
     QRegularExpression boldRegex(R"(\*\*([^\*]*)\*\*)");
     content.replace(boldRegex, "<b>\\1</b>");
 
@@ -72,6 +74,7 @@ QString WikiBrowser::createHtml(const QString &path)
     Q_ASSERT(superscriptRegex.isValid());
     content.replace(superscriptRegex, "<sup>\\1</sup>");
 
+    // Tables
     QRegularExpression tableRegex(R"((\|\|[^\|].*\|\|))", QRegularExpression::DotMatchesEverythingOption);
     match = tableRegex.match(content);
     while (match.hasMatch()) {
@@ -79,6 +82,7 @@ QString WikiBrowser::createHtml(const QString &path)
         match = tableRegex.match(content);
     }
 
+    // Headers
     for (int i=1; i<= 6; i++) {
         QRegularExpression headerRegex("^" + QStringLiteral("\\+").repeated(i) + " (.+)$");
         Q_ASSERT(headerRegex.isValid());
@@ -142,7 +146,7 @@ QString WikiBrowser::createHtml(const QString &path)
         QString tag = match.captured(2);
         QString tagProperties = match.captured(3);
         if (firstElement == "image") {
-            QStringList parts = tagProperties.split(' ', QString::SkipEmptyParts);
+            QStringList parts = tagProperties.split(' ', Qt::SkipEmptyParts);
             QString src = parts.takeFirst();
 
             if (src.startsWith('"')) {
@@ -166,7 +170,7 @@ QString WikiBrowser::createHtml(const QString &path)
         } else  if (firstElement == "module") {
 //            qDebug() << match.captured(1) << match.captured(2) << match.captured(3);
 
-            QStringList arguments = tagProperties.split(' ', QString::SkipEmptyParts);
+            QStringList arguments = tagProperties.split(' ', Qt::SkipEmptyParts);
             QString module = arguments.takeFirst();
 //            qDebug() << module << arguments;
 
@@ -443,7 +447,7 @@ bool WikiBrowser::preprocess(QString *content, int depth)
             match = argumentRegex.match(argumentsString);
         } while (match.hasMatch());
 
-        const QStringList argumentsList = match.captured(2).split(QString::SkipEmptyParts);
+        const QStringList argumentsList = match.captured(2).split(Qt::SkipEmptyParts);
 
         if (module == "Redirect") {
             const QString redirectTarget = arguments["destination"];
@@ -480,7 +484,7 @@ QString WikiBrowser::parseTable(const QString &tableText)
 {
     QString ret;
     ret += "<table class='wiki-content-table'>\n";
-    QStringList lines = tableText.split("\n", QString::SkipEmptyParts);
+    QStringList lines = tableText.split("\n", Qt::SkipEmptyParts);
     bool isHeader = true;
     for (const QString &line : lines) {
         ret.append("  <tr>\n");
@@ -516,7 +520,7 @@ QString WikiBrowser::parseCollapsable(QString content)
         content = content.remove(match.captured());
     }
 
-    QStringList lines = content.split("\n", QString::SkipEmptyParts);
+    QStringList lines = content.split("\n", Qt::SkipEmptyParts);
     if (lines.length() < 2) {
         qWarning() << "empty content";
         return ret;
