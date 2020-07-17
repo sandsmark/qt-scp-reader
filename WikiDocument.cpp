@@ -79,6 +79,16 @@ QString WikiBrowser::createHtml(const QString &path)
         match = tableRegex.match(content);
     }
 
+    for (int i=1; i<= 6; i++) {
+        QRegularExpression headerRegex("^" + QStringLiteral("\\+").repeated(i) + " (.+)$");
+        Q_ASSERT(headerRegex.isValid());
+        match = headerRegex.match(content);
+        while (match.hasMatch()) {
+            content.replace(match.captured(0), "<h" + QString::number(i) + ">" + match.captured(1).toHtmlEscaped() + "</h" + QString::number(i) + ">");
+            match = headerRegex.match(content);
+        }
+    }
+
 //    const QSet<QString> moduleBlacklist({"Rate"});
 //    QRegularExpression moduleRegex(R"(\[\[module ([^\]]*)\]\])");
 //    match = moduleRegex.match(content);
