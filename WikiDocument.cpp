@@ -77,7 +77,7 @@ QString WikiBrowser::createHtml(const QString &path)
         match = collapsableRegex.match(content);
     }
 
-    // Inline formatting (bold, italic, strikethrought, etc.)
+    // Inline formatting (bold, italic, strikethrough, etc.)
     QRegularExpression boldRegex(R"(\*\*([^\*]*)\*\*)");
     content.replace(boldRegex, "<b>\\1</b>");
 
@@ -90,6 +90,10 @@ QString WikiBrowser::createHtml(const QString &path)
     QRegularExpression superscriptRegex(R"(\^\^([^\^]*)\^\^)");
     Q_ASSERT(superscriptRegex.isValid());
     content.replace(superscriptRegex, "<sup>\\1</sup>");
+
+    QRegularExpression underlineRegex("__([^_]+)__");
+    Q_ASSERT(underlineRegex.isValid());
+    content.replace(underlineRegex, "<u>\\1</u>");
 
 
     // Tables
