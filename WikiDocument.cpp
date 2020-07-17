@@ -74,6 +74,7 @@ QString WikiBrowser::createHtml(const QString &path)
     Q_ASSERT(superscriptRegex.isValid());
     content.replace(superscriptRegex, "<sup>\\1</sup>");
 
+
     // Tables
     QRegularExpression tableRegex(R"((\|\|[^\|].*\|\|))", QRegularExpression::DotMatchesEverythingOption);
     match = tableRegex.match(content);
@@ -485,24 +486,20 @@ QString WikiBrowser::parseTable(const QString &tableText)
     QString ret;
     ret += "<table class='wiki-content-table'>\n";
     QStringList lines = tableText.split("\n", Qt::SkipEmptyParts);
-    bool isHeader = true;
     for (const QString &line : lines) {
         ret.append("  <tr>\n");
-        QStringList cells = line.split("||");
-        if (cells.count() % 2 == 1 && cells.first() == "") {
-            cells.takeFirst();
-        }
-        for (const QString &cell : cells) {
-            if (isHeader) {
-                ret.append("    <th>" + cell + "</th>\n");
+        const QStringList cells = line.split("||");
+        for (const QString &cell : cells.mid(1, cells.count() - 2)) {
+            if (cell.startsWith("~ ")) { // header
+                ret.append("    <th>" + cell.mid(2) + "</th>\n");
             } else {
                 ret.append("    <td>" + cell + "</td>\n");
             }
         }
         ret.append("  </tr>\n");
-        isHeader = false;
     }
     ret += "</table>\n";
+
     return ret;
 
 }
