@@ -314,9 +314,9 @@ void WikiDocument::toggleCollapsable(const QString &name)
                     it++;
                 }
 //                    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-                qDebug() << "\n\n\n";
-                qDebug().noquote() << cursor.selection().toHtml();
-                qDebug() << "\n\n\n";
+                //qDebug() << "\n\n\n";
+                //qDebug().noquote() << cursor.selection().toHtml();
+                //qDebug() << "\n\n\n";
 //                cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
 //                if (wasVisible) {
 //                    m_hiddenFragments[name] = cursor.selection();
