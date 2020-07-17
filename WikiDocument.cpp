@@ -84,7 +84,7 @@ QString WikiBrowser::createHtml(const QString &path)
     QRegularExpression italicRegex(R"(//([^/]*)//)");
     content.replace(italicRegex, "<i>\\1</i>");
 
-    QRegularExpression strikethroughRegex(R"(--([^-]*)--)");
+    QRegularExpression strikethroughRegex(R"(--([^-]+)--)");
     content.replace(strikethroughRegex, "<s>\\1</s>");
 
     QRegularExpression superscriptRegex(R"(\^\^([^\^]*)\^\^)");
