@@ -4,9 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui gui_private
+QT += core gui gui_private widgets
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT += widgets
 
 TARGET = scpreader
 TEMPLATE = app
@@ -39,4 +39,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
-    pages.qrc
+    pages.qrc \
+    styles.qrc \
+

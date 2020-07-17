@@ -218,7 +218,7 @@ QString WikiBrowser::createHtml(const QString &path)
 
     QString html = "<html><head>";
     if (1){
-        QFile cssFile("/home/sandsmark/src/scpreader/style.css");
+        QFile cssFile(":/style.css");
         if (cssFile.open(QIODevice::ReadOnly)) {
             QByteArray css = cssFile.readAll();
             html += "<style type=\"text/css\">";
@@ -239,7 +239,7 @@ QString WikiBrowser::createHtml(const QString &path)
 //#endif
     }
     if (1){
-        QFile cssFile("/home/sandsmark/src/scpreader/custom.css");
+        QFile cssFile(":/custom.css");
         if (cssFile.open(QIODevice::ReadOnly)) {
             QByteArray css = cssFile.readAll();
             html += "<style type=\"text/css\">";
