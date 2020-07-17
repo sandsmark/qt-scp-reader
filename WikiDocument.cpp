@@ -150,24 +150,69 @@ QString WikiBrowser::createHtml(const QString &path)
 
     // [[tags]]
     while (match.hasMatch()) {
-//        qDebug() << match.capturedTexts();
         QString firstElement = match.captured(2);
         QString text;
 
         QString tag = match.captured(2);
         QString tagProperties = match.captured(3);
-        if (firstElement == "image") {
+
+        static const QSet<QString> validImageTags({
+                "image", // plain
+                "=image", // centered
+                "<image", // left
+                ">image", // right
+                "f<image", // floating left
+                "f>image", // floating right
+                });
+        if (validImageTags.contains(firstElement)) {
             QStringList parts = tagProperties.split(' ', Qt::SkipEmptyParts);
             QString src = parts.takeFirst();
 
-            if (src.startsWith('"')) {
-                src.remove(0, 1);
+            if (!src.startsWith('"')) {
+                src.replace("\"", "\\\"");
+                src.prepend("\"");
+                if (src.endsWith('"')) {
+                    qWarning() << "Invalid src" << tagProperties;
+                }
+                src.append("\"");
             }
-            if (src.endsWith('"')) {
-                src.chop(1);
-            }
+
             parts.prepend("src=" + src);
+
+            QString elementClass;
+            if (firstElement.length() == 6) { // single prefix (=, < or >)
+                switch(firstElement[0].toLatin1()) {
+                case '=':
+                    elementClass = "image-container aligncenter";
+                    break;
+                case '<':
+                    elementClass = "image-container alignleft";
+                    break;
+                case '>':
+                    elementClass = "image-container alignright";
+                    break;
+                default:
+                    qWarning() << "Unknown image alignment" << firstElement;
+                    break;
+                }
+            } else if (firstElement.length() == 7) { // floating alignment (f< or f>)
+                switch(firstElement[1].toLatin1()) {
+                case '<':
+                    elementClass = "image-container floatleft";
+                    break;
+                case '>':
+                    elementClass = "image-container floatright";
+                    break;
+                default:
+                    qWarning() << "Unknown image alignment" << firstElement;
+                    break;
+                }
+            }
+            if (!elementClass.isEmpty()) {
+                parts.prepend("class=\"" + elementClass + "\"");
+            }
             tagProperties = parts.join(' ');
+            tag = "img";
         } else if (firstElement == "*user") {
             QString username = match.captured(3);
             text = username;
