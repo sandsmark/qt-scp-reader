@@ -41,17 +41,6 @@ QString WikiBrowser::createHtml(const QString &path)
 
     QRegularExpressionMatch match;
 
-    // Headers
-    for (int i=6; i > 0; i--) {
-        QRegularExpression headerRegex("^" + QStringLiteral("\\+").repeated(i) + " (.+)$", QRegularExpression::MultilineOption);
-        Q_ASSERT(headerRegex.isValid());
-        match = headerRegex.match(content);
-        while (match.hasMatch()) {
-            content.replace(match.captured(0), "<h" + QString::number(i) + ">" + match.captured(1).toHtmlEscaped() + "</h" + QString::number(i) + ">");
-            match = headerRegex.match(content);
-        }
-    }
-
     // Horizontal rules/lines
     QRegularExpression hruleRegex("^\\s*----+\\s*$", QRegularExpression::MultilineOption);
     content.replace(hruleRegex, "\n<hr>\n");
@@ -63,6 +52,17 @@ QString WikiBrowser::createHtml(const QString &path)
     content.replace(QRegularExpression("^>", QRegularExpression::MultilineOption), "   "); // remove them, could do it in one pass but meh
 
     content.replace("\xc2\xa0\xc2\xa0\xc2\xa0\xc2\xa0", "<br/>");
+
+    // Headers
+    for (int i=6; i > 0; i--) {
+        QRegularExpression headerRegex("^\\s*" + QStringLiteral("\\+").repeated(i) + " (.+)$", QRegularExpression::MultilineOption);
+        Q_ASSERT(headerRegex.isValid());
+        match = headerRegex.match(content);
+        while (match.hasMatch()) {
+            content.replace(match.captured(0), "<h" + QString::number(i) + ">" + match.captured(1).toHtmlEscaped() + "</h" + QString::number(i) + ">");
+            match = headerRegex.match(content);
+        }
+    }
 
     // Paragraphs
     QRegularExpression paragraphRegex(R"(^$\n([^\[].+)\n^)", QRegularExpression::MultilineOption);
