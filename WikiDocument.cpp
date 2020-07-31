@@ -370,7 +370,6 @@ void WikiDocument::toggleCollapsable(const QString &name)
     bool shouldHide = m_shownCollapsables[name];
     m_shownCollapsables[name] = !shouldHide;
 
-    bool wasVisible = true;
     for (QTextBlock block = begin(); block.isValid(); block = block.next()) {
         for (const QTextLayout::FormatRange &r : block.textFormats()) {
             if (foundHref && foundContent) {
@@ -384,6 +383,7 @@ void WikiDocument::toggleCollapsable(const QString &name)
                 cursor.movePosition(QTextCursor::PreviousBlock);
 
                 while(it != frame->end()) {
+                    it.currentBlock().setVisible(!shouldHide);
                     cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
                     it++;
                 }
@@ -394,15 +394,12 @@ void WikiDocument::toggleCollapsable(const QString &name)
 
             if (r.format.anchorHref() == "#" + matchName) {
                 QTextCursor thisCursor(block);
-                thisCursor.movePosition(QTextCursor::StartOfBlock);
                 thisCursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, r.start);
                 thisCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, r.length);
 
-                if (thisCursor.selectedText() == m_collapsableHiddenNames[name]) {
+                if (shouldHide) {
                     thisCursor.insertText(m_collapsableShowNames[name]);
-                    wasVisible = false;
                 } else {
-                    wasVisible = true;
                     thisCursor.insertText(m_collapsableHiddenNames[name]);
                 }
                 foundHref = true;
@@ -410,6 +407,7 @@ void WikiDocument::toggleCollapsable(const QString &name)
 
         }
     }
+    markContentsDirty(0, characterCount());
 
     if (!foundHref) {
         qWarning() << "Failed to find link";
