@@ -19,6 +19,7 @@ public:
 protected:
 //    void paintEvent(QPaintEvent *) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     WikiDocument *m_document;

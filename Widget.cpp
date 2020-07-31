@@ -15,6 +15,7 @@
 #include <QSortFilterProxyModel>
 #include <QStandardItemModel>
 #include <QDir>
+#include <QSettings>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent),
@@ -91,7 +92,14 @@ Widget::Widget(QWidget *parent)
     });
     m_browser->setSource(QString("qrc:///pages/members-pages.txt"));
     connect(pagesFilterEdit, &QLineEdit::textChanged, searchModel, &QSortFilterProxyModel::setFilterFixedString);
-    resize(1024, 768);
+
+    QSettings settings;
+    QSize lastSize = settings.value("windowsize").toSize();
+    if (lastSize.isEmpty()) {
+        resize(1024, 768);
+    } else {
+        resize(lastSize);
+    }
 }
 
 Widget::~Widget()
@@ -107,4 +115,10 @@ void Widget::mouseReleaseEvent(QMouseEvent *event)
     qDebug() << "click at" << event->pos();
 
 
+}
+
+void Widget::closeEvent(QCloseEvent *)
+{
+    QSettings settings;
+    settings.setValue("windowsize", size());
 }
