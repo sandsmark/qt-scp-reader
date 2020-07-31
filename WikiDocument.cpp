@@ -143,15 +143,10 @@ QString WikiBrowser::createHtml(const QString &path)
     }
 
 
-    QRegularExpression elementRegex(R"(\[\[(([^\[]+?)( [^\[]+)?)\]\])");
-    match = elementRegex.match(content);
-
-    QSet<QString> standaloneTags({
-        "div", "/div",
-        "footnote", "/footnote",
-    });
 
     // [[tags]]
+    QRegularExpression elementRegex(R"(\[\[(([^\[]+?)( [^\[]+)?)\]\])");
+    match = elementRegex.match(content);
     while (match.hasMatch()) {
         QString firstElement = match.captured(2);
         QString text;
@@ -222,16 +217,48 @@ QString WikiBrowser::createHtml(const QString &path)
             tag = "a";
             tagProperties = "href=user:info/" + username.toLower().replace(' ', '-');
         } else if (firstElement == "include") {
-            // TODO
-            content = content.replace(match.captured(0), "");
-            match = elementRegex.match(content);
-            continue;
-        } else  if (firstElement == "module") {
-//            qDebug() << match.captured(1) << match.captured(2) << match.captured(3);
+            // TODO: maybe a more generic include thing?
 
+            QStringList parts = tagProperties.split(' ', Qt::SkipEmptyParts);
+
+            const QString toInclude = parts.takeFirst().trimmed();
+
+            QHash<QString, QString> variables;
+            for (const QString &variable : parts.join(' ').split('|')) {
+                const int equalsPos = variable.indexOf('=');
+                if (equalsPos == -1) {
+                    qWarning() << "Invalid variable" << variable;
+                    continue;;
+                }
+                variables[variable.mid(0, equalsPos)] = variable.mid(equalsPos + 1);
+            }
+
+            // I think this is the old way to show images
+            if (toInclude == "component:image-block") {
+                tag = "img";
+                QString name = variables["name"];
+                if (name.contains('"') && !name.contains("'")) {
+                    name = "'" + name + "'";
+                } else if (!name.contains('"') && name.contains("'")) {
+                    name = '"' + name + '"';
+                } else {
+                    name.replace("'", "\\'");
+                    name.replace("\"", "\\\"");
+                }
+
+                tagProperties = "src=" + name;
+                const QString caption = variables["caption"];
+                if (!caption.isEmpty()) {
+                    tagProperties += " alt=" + caption;
+                }
+            } else {
+                qWarning() << "Unhandled include" << toInclude;
+                qDebug() << tag << tagProperties;
+            }
+        } else  if (firstElement == "module") {
             QStringList arguments = tagProperties.split(' ', Qt::SkipEmptyParts);
             QString module = arguments.takeFirst();
-//            qDebug() << module << arguments;
+            qDebug() << "modules not handled:" << module << arguments;
 
 
             // TODO
