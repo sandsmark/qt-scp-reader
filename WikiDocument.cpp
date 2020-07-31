@@ -65,7 +65,7 @@ QString WikiBrowser::createHtml(const QString &path)
     }
 
     // Paragraphs
-    QRegularExpression paragraphRegex(R"(^$\n([^\[].+)\n^)", QRegularExpression::MultilineOption);
+    QRegularExpression paragraphRegex(R"(^$\n([^\[\|].+)\n^)", QRegularExpression::MultilineOption);
     content.replace(paragraphRegex, "\n<p>\\1</p>\n\n");
 
     // Links to paragraphs
