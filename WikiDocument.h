@@ -22,6 +22,8 @@ public:
     QMap<QString, QString> m_collapsableHiddenNames;
     QMap<QString, QString> m_collapsableShowNames;
     QMap<QString, QTextDocumentFragment> m_hiddenFragments;
+
+    QHash<QString, bool> m_shownCollapsables;
 };
 
 class WikiBrowser  : public QTextBrowser
@@ -46,6 +48,7 @@ private:
 
     QMap<QString, QString> m_collapsableHiddenNames;
     QMap<QString, QString> m_collapsableShowNames;
+    QHash<QString, bool> m_shownCollapsables;
 };
 
 #endif // WIKIDOCUMENT_H

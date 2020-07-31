@@ -367,6 +367,9 @@ void WikiDocument::toggleCollapsable(const QString &name)
     bool foundContent = false;
     const QString matchName = name;
 
+    bool shouldHide = m_shownCollapsables[name];
+    m_shownCollapsables[name] = !shouldHide;
+
     bool wasVisible = true;
 //    int dirtyStart = characterCount(), dirtyEnd = 0;
     for (QTextBlock block = begin(); block.isValid(); block = block.next()) {
@@ -634,6 +637,7 @@ QString WikiBrowser::parseCollapsable(QString content)
 
     m_collapsableShowNames[collapsableName] = showString;
     m_collapsableHiddenNames[collapsableName] = hideString;
+    m_shownCollapsables.insert(collapsableName, true);
 
     lines.last().remove("[[/collapsible]]");
 
@@ -709,6 +713,7 @@ QVariant WikiBrowser::loadResource(int type, const QUrl &name)
 
     wikiDocument->m_collapsableShowNames = m_collapsableShowNames;
     wikiDocument->m_collapsableHiddenNames = m_collapsableHiddenNames;
+    wikiDocument->m_shownCollapsables = m_shownCollapsables;
 
     return html;
 }
