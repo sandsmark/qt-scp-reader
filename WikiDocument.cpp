@@ -100,7 +100,7 @@ QString WikiBrowser::createHtml(const QString &path)
 
 
     // Tables
-    QRegularExpression tableRegex(R"((\|+[^\|].*\|\|))", QRegularExpression::DotMatchesEverythingOption);
+    QRegularExpression tableRegex(R"(\n\s*(\|\|+[^\|].*\|\|))", QRegularExpression::DotMatchesEverythingOption);
     match = tableRegex.match(content);
     while (match.hasMatch()) {
         content.replace(match.captured(0), parseTable(match.captured(1)));
