@@ -548,11 +548,20 @@ QString WikiBrowser::parseCollapsable(QString content)
         hideString = "Show";
     }
 
+
     m_collapsableShowNames[collapsableName] = showString;
     m_collapsableHiddenNames[collapsableName] = hideString;
     m_shownCollapsables.insert(collapsableName, true);
 
     lines.last().remove("[[/collapsible]]");
+
+    // better safe than sorry
+    showString = showString.toHtmlEscaped();
+    hideString = hideString.toHtmlEscaped();
+    hideString.replace("[", "&#x5B;");
+    hideString.replace("]", "&#x5D;");
+    hideString.replace("|", "&#x7C;");
+    hideString.replace("=", "&#x3D;");
 
     ret += "<div class='collapsible-block-unfolded-link'><a class='collapsible-block-link' href=\"#" + collapsableName + "\">" + hideString + "</a></div>\n"; // start with hidestring, we need to use toggleBlock() to hide the blocks..
 
