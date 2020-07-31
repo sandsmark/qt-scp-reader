@@ -254,6 +254,9 @@ QString WikiBrowser::createHtml(const QString &path)
             } else {
                 qWarning() << "Unhandled include" << toInclude;
                 qDebug() << tag << tagProperties;
+                content = content.replace(match.captured(0), "");
+                match = elementRegex.match(content);
+                continue;
             }
         } else  if (firstElement == "module") {
             QStringList arguments = tagProperties.split(' ', Qt::SkipEmptyParts);
