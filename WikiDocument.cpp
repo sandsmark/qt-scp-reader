@@ -638,10 +638,10 @@ QString WikiBrowser::parseCollapsable(QString content)
 
     // Qt needs a div to let us set an anchor name (with 'id'), but also a table to create a frame so we can get all the content..
     ret += "<div id='" +collapsableName + "'>";
-    ret += "<table><tr><td>";
+    ret += "<table><tr><td>\n";
     ret += lines.join("\n");
-    ret += "</td></tr></table>";
-    ret += "</div>";
+    ret += "\n</td></tr></table>";
+    ret += "</div>\n";
 
     return ret;
 }
