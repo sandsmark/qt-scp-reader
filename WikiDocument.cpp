@@ -371,105 +371,22 @@ void WikiDocument::toggleCollapsable(const QString &name)
     m_shownCollapsables[name] = !shouldHide;
 
     bool wasVisible = true;
-//    int dirtyStart = characterCount(), dirtyEnd = 0;
     for (QTextBlock block = begin(); block.isValid(); block = block.next()) {
         for (const QTextLayout::FormatRange &r : block.textFormats()) {
             if (foundHref && foundContent) {
                 break;
             }
             if (r.format.anchorNames().contains(matchName)) {
-//                dirtyStart = qMin(block.position(), dirtyStart);
-//                dirtyEnd = qMax(block.position() + block.length(), dirtyEnd);
                 QTextCursor cursor(block);
                 QTextFrame  *frame = cursor.currentFrame();
                 QTextFrame::iterator it = frame->begin();
 
                 cursor.movePosition(QTextCursor::PreviousBlock);
 
-//                cursor = QTextCursor(it.currentBlock());
-//                bool wasVisible = false;
                 while(it != frame->end()) {
-//                    QTextCursor c(it.currentBlock());
-//                    qDebug() << c.charFormat().fontPointSize() << c.blockCharFormat().fontPointSize();
-//                    if (it.currentBlock().isVisible()) {
-//                        wasVisible = true;
-//                    }
                     cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-//                    it.currentBlock().setVisible(!it.currentBlock().isVisible());
-//                    qDebug() << it.currentBlock().text();
-//                    dirtyStart = qMin(it.currentBlock().position(), dirtyStart);
-//                    dirtyEnd = qMax(it.currentBlock().position() + it.currentBlock().length(), dirtyEnd);
                     it++;
                 }
-//                    cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-                //qDebug() << "\n\n\n";
-                //qDebug().noquote() << cursor.selection().toHtml();
-                //qDebug() << "\n\n\n";
-//                cursor.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-//                if (wasVisible) {
-//                    m_hiddenFragments[name] = cursor.selection();
-//                    cursor.removeSelectedText();
-//                } else {
-//                    cursor.insertFragment(m_hiddenFragments[name]);
-//                }
-
-//                qDebug() << cursor.selection();
-//                it = cursor.currentFrame()->begin();
-//                while(it != cursor.currentFrame()->end()) {
-//                    QTextCursor c(it.currentBlock());
-//                    qDebug() << c.charFormat().fontPointSize() << c.blockCharFormat().fontPointSize();
-//                    QTextBlockFormat bf = c.blockFormat();
-//                    if (wasVisible) {
-//                        bf.setLineHeight(0, QTextBlockFormat::FixedHeight);
-//                        bf.setTopMargin(0);
-//                        bf.setBottomMargin(0);
-//                    } else {
-//                        bf.setLineHeight(100, QTextBlockFormat::ProportionalHeight);
-//                        bf.setTopMargin(10);
-//                        bf.setBottomMargin(10);
-//                    }
-//                    c.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
-////                    qDebug() << c.selectedText();
-//                    c.setBlockFormat(bf);
-////                    qDebug() << it.currentBlock().text();
-////                    dirtyStart = qMin(it.currentBlock().position(), dirtyStart);
-////                    dirtyEnd = qMax(it.currentBlock().position() + it.currentBlock().length(), dirtyEnd);
-//                    it++;
-//                }
-//                qDebug() << "was visible/" << wasVisible;
-//                QTextFrameFormat ff = cursor.currentFrame()->frameFormat();
-//                if (wasVisible) {
-//                    ff.setHeight(0);
-//                    ff.setPadding(0);
-//                    ff.setMargin(0);
-////                    ff.setHeight(QTextLength(QTextLength::FixedLength, 0));
-////                    ff.setWidth(QTextLength(QTextLength::FixedLength, 0));
-//                } else {
-//                    ff.setMargin(10);
-//                    ff.setPadding(10);
-//                    ff.setHeight(0);
-//                    ff.setHeight(QTextLength(QTextLength::PercentageLength, 100));
-////                    ff.setWidth(QTextLength(QTextLength::PercentageLength, 100));
-//                }
-//                cursor.currentFrame()->setFrameFormat(ff);
-//                cursor.currentFrame()->setFrameFormat(cursor.currentFrame()->frameFormat());
-
-
-                //block.setVisible(false);
-                ////block.setVisible(!block.isVisible());
-                //qDebug() << cursor.block().text() << cursor.currentFrame();
-                //{
-                //QTextCursor cur = cursor.currentFrame()->firstCursorPosition();
-                //cursor.movePosition(QTextCursor::PreviousBlock);
-                //cursor.block().setVisible(!wasVisible);
-                //qDebug() << cursor.block().text() << cursor.currentFrame();
-                //cursor.movePosition(QTextCursor::PreviousBlock);
-                //cursor.block().setVisible(!wasVisible);
-                //qDebug() << cursor.block().text() << cursor.currentFrame();
-                //cur.movePosition(QTextCursor::PreviousBlock);
-                //cur.block().setVisible(!wasVisible);
-                //qDebug() << cur.block().text() << cur.currentFrame();
-                //}
 
                 foundContent = true;
                 continue;
@@ -487,15 +404,13 @@ void WikiDocument::toggleCollapsable(const QString &name)
                 } else {
                     wasVisible = true;
                     thisCursor.insertText(m_collapsableHiddenNames[name]);
-//                    thisCursor.insertFragment(m_hiddenFragments[name]);
                 }
                 foundHref = true;
             }
 
         }
     }
-//    qDebug() << dirtyStart << dirtyEnd;
-//    markContentsDirty(dirtyStart, dirtyEnd - dirtyStart);
+
     if (!foundHref) {
         qWarning() << "Failed to find link";
     }
